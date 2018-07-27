@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Map</title>
+    <link rel="stylesheet" href="css/ol.css" type="text/css" />
+  </head>
+  <body>
+    <div id="map" class="map"></div>
+    <script src="js/ol.js"></script>
+    <script>
+      
+      var lineStyle = new ol.style.Style({
+          stroke: new ol.style.Stroke({
+              color: '#ffcc33',
+              width: 2
+          })
+      });
+
+      var source = new ol.source.Vector({
+        // features: [feature]
+      });
+      var vector = new ol.layer.Vector({
+        source: source,
+        style: [lineStyle]
+      });
+
+      osm = new ol.layer.Tile({
+        source: new ol.source.OSM()
+      });
+
+      var map = new ol.Map({
+        layers: [osm, vector],
+        target: 'map',
+        view: new ol.View({
+          center: ol.proj.fromLonLat([121.241212, 30.339369]),
+          zoom: 15
+        })
+      });
+
+      var coords = [];
+      file = './data/trace2_clean.txt';
+      try {
+      // Internet Explorer
+        xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+        xmlDoc.async = false;
+        xmlDoc.load(file);
+      } catch (e) {
+        // Chrome, Safari
+        xmlHttp = new window.XMLHttpRequest();
+        xmlHttp.open("GET", file, false);
+        xmlHttp.overrideMimeType('text/xml');
+        xmlHttp.send(null);
+        xmlDoc = xmlHttp.responseText;
+      }
+      
+      data = xmlDoc.split('\n');
+      if (data[data.length - 1] == "") {
+        data = data.slice(0, -1)
+      }
+      
+      lon_last = null;
+      lat_last = null;
+
+      for (var i = 0; i < data.length; i++) {
+        lon = parseFloat(data[i].split(',')[0]);
+        lat = parseFloat(data[i].split(',')[1]);
+
+        // coords.push([lon, lat]);
+        // WGS84 to psudo mercator
+        coords[i] = ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857');
+        var feature = new ol.Feature({
+          geometry: new ol.geom.LineString(coords.slice(-2)),
+          name: 'Line'
+        });
+        source.addFeature(feature);
+      }
+    </script>
+  </body>
+</html>
